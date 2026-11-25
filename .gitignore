@@ -1,0 +1,14 @@
+# Chaves privadas e arquivos gerados pela assinatura (cada um gera os seus)
+autoritativo/zonas/K*
+autoritativo/zonas/*.signed
+autoritativo/zonas/dsset-*
+resolvedor/lab.ds
+
+# Certificado e chave do DoT/DoH
+borda/certs/*.pem
+
+# Capturas de pacotes (podem ser grandes; suba só as que quiser mostrar)
+capturas/*.pcap
+
+__pycache__/
+.DS_Store

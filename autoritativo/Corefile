@@ -1,0 +1,11 @@
+# Servidor autoritativo da zona lab.internal
+# Publica a versão ASSINADA da zona (gerada por scripts/assinar_zona.sh).
+# O plugin file confere o serial a cada 5 s e recarrega a zona quando ele muda.
+
+lab.internal:53 {
+    file /etc/coredns/zonas/db.lab.internal.signed {
+        reload 5s
+    }
+    log
+    errors
+}

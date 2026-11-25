@@ -1,0 +1,6 @@
+# Lista de bloqueio do DNS protetivo (formato hosts)
+# O CoreDNS relê este arquivo a cada 2 s: dá para bloquear ou liberar ao vivo.
+
+0.0.0.0 phishing-banco.lab.internal
+0.0.0.0 malware.lab.internal
+0.0.0.0 doubleclick.net

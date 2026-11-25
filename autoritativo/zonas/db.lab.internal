@@ -1,0 +1,21 @@
+; Zona do laboratório (versão SEM assinatura, a que você edita)
+; O sufixo .internal é reservado pela ICANN para uso privado,
+; então nunca colide com um domínio real.
+; Os endereços 10.x são fictícios: o que importa é a resposta do DNS.
+
+$ORIGIN lab.internal.
+$TTL 300
+@     IN SOA  ns1.lab.internal. admin.lab.internal. (
+              1          ; serial (a assinatura troca pela data/hora atual)
+              3600       ; refresh
+              600        ; retry
+              86400      ; expire
+              300 )      ; TTL negativo
+@     IN NS    ns1.lab.internal.
+ns1   IN A     172.20.0.10
+www   IN A     10.0.0.80
+www   IN AAAA  fd00::80
+@     IN MX    10 mail.lab.internal.
+mail  IN A     10.0.0.25
+blog  IN CNAME www.lab.internal.
+banco IN A     10.0.0.43

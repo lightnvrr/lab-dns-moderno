@@ -1,0 +1,70 @@
+# Laboratório DNS Moderno
+# Cinco contêineres em três redes:
+#   autoritativo  -> publica a zona lab.internal assinada com DNSSEC
+#   resolvedor    -> Unbound, resolvedor recursivo que valida DNSSEC
+#   borda         -> CoreDNS, porta de entrada (DNS comum, DoT, DoH, cache, bloqueio, GeoDNS, métricas)
+#   cliente-a/b   -> máquinas de teste, uma em cada "região"
+
+services:
+  autoritativo:
+    image: coredns/coredns:1.12.1
+    command: -conf /etc/coredns/Corefile
+    volumes:
+      - ./autoritativo:/etc/coredns:ro
+    networks:
+      core: { ipv4_address: 172.20.0.10 }
+
+  resolvedor:
+    build: ./resolvedor
+    cap_add: [NET_ADMIN, NET_RAW]          # para o tcpdump do módulo 3
+    volumes:
+      - ./resolvedor:/etc/unbound/lab:ro    # unbound.conf e lab.ds
+      - ./capturas:/capturas
+    networks:
+      core: { ipv4_address: 172.20.0.20 }
+    depends_on: [autoritativo]
+
+  borda:
+    image: coredns/coredns:1.12.1
+    command: -conf /etc/coredns/Corefile
+    volumes:
+      - ./borda:/etc/coredns:ro
+    ports:
+      - "1053:53/udp"     # DNS comum (a 53 do computador costuma estar ocupada)
+      - "1053:53/tcp"
+      - "853:853/tcp"     # DNS over TLS
+      - "8443:443/tcp"    # DNS over HTTPS
+      - "9153:9153/tcp"   # métricas Prometheus
+    networks:
+      core:     { ipv4_address: 172.20.0.53 }
+      regiao_a: { ipv4_address: 172.21.0.53 }
+      regiao_b: { ipv4_address: 172.22.0.53 }
+    depends_on: [resolvedor]
+
+  cliente-a:
+    build: ./cliente
+    command: sleep infinity
+    hostname: cliente-a
+    cap_add: [NET_ADMIN, NET_RAW]
+    volumes:
+      - .:/lab                              # o projeto inteiro aparece em /lab
+    networks:
+      regiao_a: { ipv4_address: 172.21.0.100 }
+
+  cliente-b:
+    build: ./cliente
+    command: sleep infinity
+    hostname: cliente-b
+    cap_add: [NET_ADMIN, NET_RAW]
+    volumes:
+      - .:/lab
+    networks:
+      regiao_b: { ipv4_address: 172.22.0.100 }
+
+networks:
+  core:
+    ipam: { config: [{ subnet: 172.20.0.0/24 }] }
+  regiao_a:
+    ipam: { config: [{ subnet: 172.21.0.0/24 }] }
+  regiao_b:
+    ipam: { config: [{ subnet: 172.22.0.0/24 }] }

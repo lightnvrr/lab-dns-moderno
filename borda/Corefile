@@ -1,0 +1,71 @@
+# Borda: a porta de entrada dos clientes
+# Atende DNS comum (53), DNS over TLS (853) e DNS over HTTPS (443, caminho /dns-query).
+# Os três usam o mesmo trecho (resolver): bloqueio, cache e encaminhamento ao Unbound.
+
+(resolver) {
+    log
+    errors
+    # DNS protetivo: nomes da lista recebem 0.0.0.0; o resto segue adiante
+    hosts /etc/coredns/bloqueio.hosts {
+        ttl 10
+        reload 2s
+        fallthrough
+    }
+    cache 300
+    forward . 172.20.0.20
+    prometheus 0.0.0.0:9153
+}
+
+# DNS comum, porta 53
+.:53 {
+    import resolver
+}
+
+# DNS over TLS, porta 853
+tls://.:853 {
+    tls /etc/coredns/certs/cert.pem /etc/coredns/certs/key.pem
+    import resolver
+}
+
+# DNS over HTTPS, porta 443
+https://.:443 {
+    tls /etc/coredns/certs/cert.pem /etc/coredns/certs/key.pem
+    import resolver
+}
+
+# Domínio canário do Firefox: NXDOMAIN pede ao navegador que não ligue o DoH automático
+use-application-dns.net:53 {
+    template ANY ANY {
+        rcode NXDOMAIN
+    }
+    log
+}
+
+# GeoDNS: o mesmo nome responde diferente conforme a rede de quem pergunta
+geo.internal:53 {
+    view regiao-a {
+        expr incidr(client_ip(), '172.21.0.0/24')
+    }
+    hosts {
+        10.1.0.10 cdn.geo.internal
+    }
+    log
+}
+
+geo.internal:53 {
+    view regiao-b {
+        expr incidr(client_ip(), '172.22.0.0/24')
+    }
+    hosts {
+        10.2.0.10 cdn.geo.internal
+    }
+    log
+}
+
+# Qualquer outro cliente (por exemplo, o seu computador pela porta 1053)
+geo.internal:53 {
+    hosts {
+        10.0.0.10 cdn.geo.internal
+    }
+    log
+}

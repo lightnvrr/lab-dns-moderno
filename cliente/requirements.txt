@@ -1,0 +1,5 @@
+# Versões fixas: a API de DoH do dnspython mudou nas versões 2.8+
+dnspython==2.7.0
+httpx[http2]==0.28.1
+pandas>=2.0
+matplotlib>=3.7
