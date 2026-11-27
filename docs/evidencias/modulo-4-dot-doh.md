@@ -270,29 +270,56 @@ conexões usam **TLS 1.3**. O que ainda vaza é o **tipo** de serviço: o client
 claro o protocolo que quer usar (o ALPN), que é `dot` no DoT e `h2` (HTTP/2) no DoH, e a porta
 também entrega isso. Ou seja, o observador sabe que você fez DNS cifrado, mas não sabe o quê.
 
-## 3. Prints do Wireshark: nome visível só no UDP (pendente, Jamily)
+## 3. Prints do Wireshark: nome visível só no UDP
 
-As três capturas já estão em `C:\Users\jamil\Downloads\lab-dns-moderno\lab-dns-moderno\capturas\`.
-Se o Wireshark ainda não estiver instalado, veja a issue #1.
+### DNS comum (`do53.pcap`)
 
-1. **`do53.pcap`**: abra o arquivo, clique na primeira linha (`Standard query ... A www.lab.internal`)
-   e expanda **Domain Name System > Queries**. No painel de bytes, embaixo, o texto
-   `www.lab.internal` aparece à direita. **Print 1**: o nome em destaque. Abra também a segunda
-   linha e expanda **Answers** para mostrar o `10.0.0.80`.
-2. **`dot.pcap`**: o Wireshark costuma reconhecer a porta 853 como DoT e mostrar `TLSv1.3` na
-   coluna Protocol. Se aparecer só `TCP`, clique com o botão direito num pacote, escolha
-   **Decode As...** e coloque a porta 853 como **TLS**. **Print 2**: as linhas `Application Data`,
-   com o pacote aberto mostrando "Encrypted Application Data" (só bytes sem sentido).
-3. **`doh.pcap`**: a mesma coisa, na porta 443. **Print 3**: as linhas `Application Data`.
-4. **Prova do "nenhum nome"**: em cada um dos três arquivos, use **Edit > Find Packet**
-   (`Ctrl+F`), escolha **String** e **Packet bytes**, e procure `lab.internal`. **Print 4**:
-   no `do53.pcap` ele encontra; no `dot.pcap` e no `doh.pcap`, a barra de status embaixo diz
-   que não encontrou.
-5. Opcional: no `doh.pcap`, abra o **Client Hello** e expanda a extensão
-   **application_layer_protocol_negotiation**, que mostra `h2`. É o que ainda vaza.
+![do53.pcap no Wireshark: pergunta e resposta legíveis](prints/modulo-4-do53.png)
 
-Uma boa composição para o vídeo é colocar os prints 1 e 2 lado a lado: a mesma pergunta, num
-caso legível e no outro, não.
+*Os 2 pacotes do DNS comum. O nome `www.lab.internal` e o IP `10.0.0.80` aparecem legíveis
+na coluna Info e na resposta aberta (**Answers**). No painel de bytes, à direita, o nome
+aparece escrito como texto (`www lab internal`), e o IP está nos bytes `0a 00 00 50`, que são
+10.0.0.80 em binário. Qualquer um no caminho lê a pergunta e a resposta.*
+
+### DNS over TLS (`dot.pcap`)
+
+![dot.pcap no Wireshark: só TCP e TLS 1.3 cifrado](prints/modulo-4-dot.png)
+
+*A mesma pergunta pelo DoT, em **15 pacotes** (filtro `tcp.port == 853`): os 3 primeiros abrem
+a conexão TCP (`SYN`, `SYN, ACK`, `ACK`), depois vem o handshake **TLS 1.3** (`Client Hello`,
+`Server Hello`), e a pergunta e a resposta viajam como **`Application Data`** cifrado. O pacote
+aberto mostra só "Encrypted Application Data", bytes sem sentido. Nenhum nome e nenhum IP de
+resposta. O campo "Version: TLS 1.2 (0x0303)" no registro é normal: o TLS 1.3 escreve 1.2 ali
+por compatibilidade, e a versão de verdade é negociada dentro do handshake.*
+
+### DNS over HTTPS (`doh.pcap`)
+
+![doh.pcap no Wireshark: mesmo padrão do DoT na porta 443](prints/modulo-4-doh.png)
+
+*O DoH tem o mesmo padrão do DoT, mas na **porta 443** (`Dst Port: 443` no pacote aberto), a
+mesma dos sites HTTPS. Com o filtro `tls`, aparecem só os 12 registros TLS dos 22 pacotes da
+captura. Há mais `Application Data` que no DoT, porque o HTTP/2 troca mensagens de controle
+dentro do túnel, e o pacote aberto mostra "Application Data Protocol: Hypertext Transfer
+Protocol", também cifrado.*
+
+### O que ainda vaza no DoH (Client Hello)
+
+![Client Hello do DoH: ALPN h2 e nenhum SNI](prints/modulo-4-doh-clienthello.png)
+
+*O **Client Hello** é a única parte do TLS que vai sem cifra. O que ainda vaza: a **porta 443**
+e o **ALPN `h2`** (o cliente avisa que quer falar HTTP/2), que dizem "isto é HTTPS", mas não o
+que foi perguntado. O que não vaza: a lista de extensões **não tem `server_name` (SNI)**, porque
+o `dig` se conectou direto pelo IP 172.21.0.53. Um navegador que usa DoH pelo nome do servidor
+(por exemplo, `cloudflare-dns.com`) mandaria esse nome no SNI, e quem estivesse no caminho
+saberia **qual** serviço de DNS você usa, mas ainda não saberia **o que** você perguntou.*
+
+### Como os prints foram feitos
+
+As capturas estão em `C:\Users\jamil\Downloads\lab-dns-moderno\lab-dns-moderno\capturas\`.
+No `dot.pcap`, se o Wireshark mostrar só `TCP`, use **Decode As...** com a porta 853 como **TLS**.
+Uma prova extra, que não foi capturada: em cada arquivo, **Edit > Find Packet** (`Ctrl+F`),
+**String** em **Packet bytes**, procurando `lab.internal`. O Wireshark só encontra no `do53.pcap`,
+como a busca em Python da seção 2 já mostrou.
 
 ## 4. DoH com a zona quebrada ainda dando SERVFAIL (canal x conteúdo)
 
@@ -412,5 +439,5 @@ A zona voltou ao normal: 10.0.0.43 com `ad`, agora também pelo DoH.
 | --- | --- |
 | `dig +tls` e `dig +https` funcionando | Ok, com teste extra do certificado |
 | Capturas `do53.pcap`, `dot.pcap` e `doh.pcap` | Ok (2, 15 e 22 pacotes, ficam só locais) e conferidas byte a byte |
-| Prints do Wireshark: nome visível só no UDP | **Pendente (Jamily)**, passo a passo na seção 3 |
+| Prints do Wireshark: nome visível só no UDP | Ok, 4 prints na seção 3 (Do53, DoT, DoH e Client Hello) |
 | DoH com a zona quebrada ainda dando SERVFAIL | Ok, também no DoT, com zona restaurada no fim |
