@@ -51,7 +51,7 @@ flowchart TB
 
 ```bash
 # 1. Baixar o projeto
-git clone https://github.com/SEU-USUARIO/lab-dns-moderno.git
+git clone https://github.com/lightnvrr/lab-dns-moderno.git
 cd lab-dns-moderno
 
 # 2. Construir as imagens (só na primeira vez, demora alguns minutos)
