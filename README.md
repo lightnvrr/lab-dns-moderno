@@ -3,8 +3,8 @@
 Um mini provedor de DNS em Docker que mostra, funcionando, os conceitos do seminário **DNS Moderno**: DNSSEC, envenenamento de cache, DNS over TLS (DoT), DNS over HTTPS (DoH), DNS protetivo, cache, GeoDNS e anycast.
 
 **Disciplina:** Tópicos em Redes de Computadores, Ciência da Computação, UFAL Campus Arapiraca
-**Autora:** Jamily Barbosa de Oliveira
-**Vídeo de apresentação:** _(coloque aqui o link do YouTube)_
+**Autoras:** Jamily Barbosa de Oliveira e Sarah Maria Rocha de Oliveira
+**Vídeo de apresentação:** _(em breve)_
 
 ---
 
@@ -65,7 +65,7 @@ docker compose up -d
 docker compose ps
 ```
 
-Os comandos funcionam no PowerShell, no Git Bash e no terminal do Linux ou macOS.
+Os comandos funcionam no PowerShell e no terminal do Linux ou macOS. No Git Bash do Windows, veja [Problemas comuns](#problemas-comuns).
 
 ## Demonstração completa
 
@@ -76,6 +76,8 @@ docker compose exec cliente-a bash /lab/scripts/demo.sh
 O script percorre todos os conceitos, mostrando cada comando antes de rodar e esperando Enter entre as etapas. Para repetir do zero: `docker compose restart borda resolvedor`.
 
 ## Demonstrações uma a uma
+
+Cada demonstração tem um registro em [`docs/evidencias/`](docs/evidencias/), com os comandos, as saídas reais, os prints e uma sugestão de como explicar no vídeo. A subida do laboratório está em [issue-1-subir-laboratorio.md](docs/evidencias/issue-1-subir-laboratorio.md), e a borda, o cache e as métricas em [borda-cache-metricas.md](docs/evidencias/borda-cache-metricas.md).
 
 Entre no cliente com `docker compose exec cliente-a bash` e rode:
 
@@ -92,19 +94,20 @@ dig @172.21.0.53 banco.lab.internal +dnssec   # status: SERVFAIL
 dig @172.21.0.53 banco.lab.internal +cd       # sem validação: aparece o IP falso 10.6.6.6
 bash /lab/scripts/restaurar_zona.sh        # reassina e volta ao normal
 ```
-O motivo aparece no log do resolvedor: `docker compose logs resolvedor | grep "validation failure"`.
+O motivo aparece no log do resolvedor: `docker compose logs resolvedor | grep "validation failure"`. Registro: [modulo-1-dnssec.md](docs/evidencias/modulo-1-dnssec.md).
 
 **Cadeia de confiança na internet real**
 ```bash
 delv @172.21.0.53 registro.br +vtrace       # termina com "fully validated"
 ```
+Registro: [modulo-2-cadeia-confianca.md](docs/evidencias/modulo-2-cadeia-confianca.md).
 
 **DoT e DoH**
 ```bash
 dig @172.21.0.53 +tls   www.lab.internal
 dig @172.21.0.53 +https www.lab.internal
 ```
-As capturas de cada protocolo ficam em `capturas/` depois do `demo.sh` e podem ser abertas no Wireshark.
+As capturas de cada protocolo ficam em `capturas/` depois do `demo.sh` e podem ser abertas no Wireshark. Registro: [modulo-4-dot-doh.md](docs/evidencias/modulo-4-dot-doh.md).
 
 **ID e porta aleatórios (defesa contra envenenamento)**
 ```bash
@@ -114,26 +117,28 @@ docker compose exec resolvedor tcpdump -i eth0 -w /capturas/resolvedor.pcap udp 
 for i in $(seq 1 20); do dig @172.21.0.53 teste$i.ufal.br +short; done
 python3 /lab/medicao/chance_envenenamento.py
 ```
-No Wireshark, filtre por `ip.src == 172.20.0.20 && dns.flags.response == 0` e adicione as colunas `dns.id` e `udp.srcport`. Os nomes saem com maiúsculas e minúsculas misturadas (técnica 0x20).
+No Wireshark, filtre por `ip.src == 172.20.0.20 && dns.flags.response == 0` e adicione as colunas `dns.id` e `udp.srcport`. Os nomes saem com maiúsculas e minúsculas misturadas (técnica 0x20). Registro: [modulo-3-envenenamento.md](docs/evidencias/modulo-3-envenenamento.md).
 
 **DNS protetivo**
 ```bash
 dig @172.21.0.53 doubleclick.net +short     # 0.0.0.0 (bloqueado)
 dig @1.1.1.1     doubleclick.net +short     # outro resolvedor: o bloqueio não vale
 ```
-A lista fica em `borda/bloqueio.hosts` e é relida a cada 2 segundos.
+A lista fica em `borda/bloqueio.hosts` e é relida a cada 2 segundos. Registro: [modulo-5-dns-protetivo.md](docs/evidencias/modulo-5-dns-protetivo.md).
 
-**GeoDNS**
+**GeoDNS** (no computador; as aspas no `@` são para o PowerShell)
 ```bash
-docker compose exec cliente-a dig @172.21.0.53 cdn.geo.internal +short   # 10.1.0.10
-docker compose exec cliente-b dig @172.22.0.53 cdn.geo.internal +short   # 10.2.0.10
+docker compose exec cliente-a dig '@172.21.0.53' cdn.geo.internal +short   # 10.1.0.10
+docker compose exec cliente-b dig '@172.22.0.53' cdn.geo.internal +short   # 10.2.0.10
 ```
+Registro: [modulo-6-geodns-ecs.md](docs/evidencias/modulo-6-geodns-ecs.md).
 
 **Anycast**
 ```bash
 dig @1.1.1.1 id.server CH TXT +short
 dig @9.9.9.9 id.server CH TXT +short
 ```
+Registro: [modulo-7-medicao-graficos.md](docs/evidencias/modulo-7-medicao-graficos.md), seções 3 e 8.
 
 ## Medição de desempenho
 
@@ -147,7 +152,17 @@ O `medir.py` faz 2.400 consultas (4 resolvedores × UDP, DoT, DoH com conexão n
 
 ## Resultados
 
-_(Depois de rodar a medição, suba a pasta `medicao/dados` e escreva aqui, em poucas linhas, o que você observou: quanto o DoT e o DoH custam a mais que o UDP, o efeito de reaproveitar a conexão, a diferença entre cache frio e quente e qual resolvedor público foi mais rápido daqui.)_
+Medianas da medição, detalhadas em [modulo-7-medicao-graficos.md](docs/evidencias/modulo-7-medicao-graficos.md):
+
+- **Conexão nova custa caro.** Nos resolvedores públicos, o DoT e o DoH com conexão nova levaram de 35 a 177 ms a mais que o UDP, por causa do handshake TCP e TLS antes da pergunta.
+- **Reaproveitar a conexão resolve.** O DoH reaproveitado ficou a poucos milissegundos do UDP (+0,7 ms no Quad9, +4,3 ms no Google) e, na Cloudflare, foi até mais rápido (27,4 ms contra 65,1 ms).
+- **O cache faz a maior diferença.** A primeira consulta de um nome (cache frio) levou 453,5 ms, e a segunda (cache quente), 2,0 ms.
+- **O Quad9 foi o mais rápido** no UDP (22,7 ms), seguido do Google (47,2 ms) e da Cloudflare (65,1 ms).
+- **Anycast:** pelo `id.server`, a Cloudflare (`for01`) e o Quad9 (`res700.qfor1`) provavelmente responderam de Fortaleza ("for" é o código do aeroporto de lá); é uma leitura do nome, não uma confirmação.
+
+**Ressalva sobre o DoT local.** Na própria borda, o DoT deu 47,1 ms e o DoH com conexão nova, 7,0 ms. A diferença não é a criptografia: na captura da issue #6, o cliente espera 43 ms pela confirmação (ACK) do servidor antes de mandar a pergunta. É o algoritmo de Nagle somado ao ACK atrasado do TCP.
+
+A medição principal foi feita na rede da Sarah, e o teste de cache foi refeito na rede da Jamily.
 
 ![Latência mediana por protocolo](medicao/dados/mediana_por_protocolo.png)
 
@@ -179,6 +194,9 @@ As chaves privadas da zona e do certificado não vão para o repositório (veja 
 | Quebrei a zona mas a resposta continua certa | O nome já estava no cache. `docker compose restart borda resolvedor` e tente de novo. |
 | `$'\r': command not found` nos scripts | O Git converteu os finais de linha no Windows. Rode `git config core.autocrlf false` e clone de novo. |
 | Muitas falhas nos resolvedores públicos | A rede bloqueia DNS externo ou a porta 853. Teste em outra rede e registre isso nos resultados. |
+| "Não é possível usar o operador '@'" ao rodar `dig @...` no PowerShell | No PowerShell, o `@` é um operador. Rode o `dig` dentro do cliente (`docker compose exec cliente-a bash`) ou ponha o endereço entre aspas simples: `dig '@172.21.0.53' ...`. |
+| `bash: C:/Program Files/Git/lab/scripts/preparar.sh: No such file or directory` | O Git Bash troca caminhos que começam com `/` (como `/lab/...`) por caminhos do Windows. Rode pelo PowerShell, ou no Git Bash use `MSYS_NO_PATHCONV=1 docker compose ...`. |
+| Docker Desktop mostra "There was a problem with WSL" ou `HCS_E_SERVICE_NOT_AVAILABLE` | O serviço `vmcompute` do Windows está desativado. No Terminal (Administrador): `Set-Service vmcompute -StartupType Manual` e `Start-Service vmcompute`. Depois rode `wsl --shutdown` e abra o Docker Desktop de novo. |
 
 ## Referências
 
