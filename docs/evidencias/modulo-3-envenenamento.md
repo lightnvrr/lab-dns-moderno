@@ -181,9 +181,19 @@ corrida nova na hora, sem esperar TTL nenhum. Foi o que a nossa captura fez, com
 atacante, e lembra que a garantia de verdade vem do DNSSEC: mesmo que ele acerte tudo, a
 resposta falsa não tem assinatura válida.
 
-## 5. Wireshark com as colunas `dns.id` e `udp.srcport` (pendente, Jamily)
+## 5. Wireshark com as colunas `dns.id` e `udp.srcport`
 
-Isso precisa do Wireshark aberto, e ele ainda não estava instalado na issue #1. Passo a passo:
+![Wireshark com as perguntas do resolvedor, Transaction ID e Source Port](prints/modulo-3-wireshark.png)
+
+*As 24 perguntas que o resolvedor mandou para a internet (filtro
+`ip.src == 172.20.0.20 && dns.flags.response == 0`). As colunas **Transaction ID** e
+**Source Port** mudam a cada pergunta, e a coluna **Info** mostra o 0x20 (`Teste1.UFAL.bR`,
+`tesTE2.UFaL.br`...). Os quadros **8 e 9** são a nova tentativa para o mesmo servidor
+(200.133.133.200), que não respondeu: o mesmo `teste2`, mas com ID e porta diferentes
+(`0x7159`/16164 e depois `0x2015`/30268). O Wireshark mostra o ID em hexadecimal:
+`0x7159` é o 29017 que o `tcpdump` mostrou na seção 1.*
+
+Como o print foi feito:
 
 1. Abra no Wireshark o arquivo
    `C:\Users\jamil\Downloads\lab-dns-moderno\lab-dns-moderno\capturas\resolvedor.pcap`
@@ -198,19 +208,16 @@ Isso precisa do Wireshark aberto, e ele ainda não estava instalado na issue #1.
 4. Dica: em **View > Time Display Format**, escolha "Seconds Since Previous Displayed Packet".
    Fica claro que as perguntas saem a cada poucos milissegundos, cada uma com ID e porta diferentes.
 
-**Prints sugeridos:**
-- A lista filtrada com as colunas `dns.id`, `udp.srcport` e "Info" (a coluna Info mostra os
-  nomes com letras misturadas, algo como `Standard query 0xd8d1 A Teste1.UFAL.bR`, em que
-  `0xd8d1` é o ID 55505 em hexadecimal). Esse print
-  cobre os itens 2 e 3 da issue de uma vez.
-- Um pacote aberto, com "Transaction ID" e o nome da pergunta (Queries) expandidos.
-- A saída do `chance_envenenamento.py` no terminal.
+O print acima cobre os itens 2 e 3 da issue de uma vez. No quadro 4, por exemplo, aparece
+`Standard query 0xd8d1 A Teste1.UFAL.bR OPT`, em que `0xd8d1` é o ID 55505 em hexadecimal.
+Prints opcionais que não foram feitos: um pacote aberto com "Transaction ID" e "Queries"
+expandidos, e a saída do `chance_envenenamento.py` no terminal (o texto já está na seção 4).
 
 ## Resumo
 
 | Item do checklist | Situação |
 | --- | --- |
 | Captura do resolvedor com `tcpdump` | Ok, `capturas/resolvedor.pcap` com 86 pacotes (fica só local) |
-| Wireshark com `dns.id` e `udp.srcport` mudando | Dados conferidos com o `tcpdump -r` (24 IDs e 24 portas diferentes). **Prints no Wireshark pendentes (Jamily)** |
+| Wireshark com `dns.id` e `udp.srcport` mudando | Ok, print na seção 5, conferido com o `tcpdump -r` (24 IDs e 24 portas diferentes) |
 | Nomes com maiúsculas e minúsculas (0x20) | Ok, nas perguntas e ecoados nas respostas |
 | Saída do `chance_envenenamento.py` | Ok |
