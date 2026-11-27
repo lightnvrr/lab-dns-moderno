@@ -316,3 +316,28 @@ dig @172.21.0.53 banco.lab.internal +dnssec      # print 6
 | Log com `validation failure` | Ok |
 | `restaurar_zona.sh` e `ad` de volta | Ok |
 | Prints para o README e o vídeo | Ok, 6 prints na seção 6 |
+
+## Como explicar no vídeo
+
+Sugestão de fala, na ordem dos prints da seção 6:
+
+> Cada registro da zona tem uma assinatura digital, o RRSIG, feita com a chave privada do dono
+> da zona. O resolvedor confere essa assinatura com a chave pública. Quando a conta bate, a
+> resposta chega com a flag `ad`, de *Authenticated Data*. (print 1)
+>
+> Agora eu faço o papel do atacante: troco o IP do banco para 10.6.6.6, mas não consigo refazer
+> a assinatura, porque não tenho a chave privada. (print 2)
+>
+> Quando o cliente pergunta, o resolvedor faz a conta, vê que não bate e responde **SERVFAIL**.
+> Ele prefere dar erro a mandar você para o servidor falso. (print 3)
+>
+> Para provar que o problema é a assinatura, e não a rede, eu peço com `+cd`, que desliga a
+> verificação. Aí aparece o IP falso, com a flag `cd` no lugar da `ad`. (print 4)
+>
+> O log do Unbound diz o motivo: *signature crypto failed*. (print 5)
+>
+> Quando eu reassino a zona, o banco volta ao IP certo e a flag `ad` volta. A assinatura é nova,
+> mas a chave é a mesma. (print 6)
+
+A ideia central para fechar: o DNSSEC não esconde nada, ele garante que a resposta é a que o
+dono da zona publicou.

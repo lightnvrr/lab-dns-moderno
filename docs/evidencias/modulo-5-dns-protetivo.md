@@ -217,3 +217,23 @@ A issue não pede prints. Se quiser mostrar este módulo no vídeo, os mais clar
 | `doubleclick.net` respondendo 0.0.0.0 pela borda | Ok, também por DoT e DoH |
 | O mesmo nome passando por `@1.1.1.1` | Ok, voltou o IP verdadeiro 142.251.132.238 |
 | `use-application-dns.net` com NXDOMAIN | Ok, em A e AAAA, com o contraste do 1.1.1.1 (NOERROR) |
+
+## Como explicar no vídeo
+
+Sugestão de fala:
+
+> O DNS protetivo usa o resolvedor como filtro. Se o nome está na lista de bloqueio, a borda
+> responde 0.0.0.0, um endereço que não leva a lugar nenhum, e o navegador nem chega a abrir o
+> site de anúncio ou de golpe. Como o bloqueio fica antes do cache e do Unbound, ele vale para
+> UDP, DoT e DoH.
+>
+> Mas tem um limite: ele só protege quem pergunta para esse resolvedor. Perguntando direto ao
+> 1.1.1.1, o mesmo nome volta com o IP verdadeiro.
+>
+> É aí que entra o domínio canário. Antes de ligar o DoH sozinho, o Firefox pergunta
+> `use-application-dns.net` à rede. A nossa borda responde que o nome não existe, e o Firefox
+> entende que a rede pede para ele não fugir do DNS dela. Na internet aberta, esse nome existe.
+> Mas é só um pedido: quem liga o DoH na mão, ou outro programa, ainda escapa.
+
+O que mostrar na tela: o `dig` pela borda (0.0.0.0) e pelo 1.1.1.1 (o IP verdadeiro), um embaixo
+do outro, e o `NXDOMAIN` do domínio canário.

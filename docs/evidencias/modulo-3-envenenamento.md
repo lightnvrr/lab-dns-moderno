@@ -221,3 +221,23 @@ expandidos, e a saída do `chance_envenenamento.py` no terminal (o texto já est
 | Wireshark com `dns.id` e `udp.srcport` mudando | Ok, print na seção 5, conferido com o `tcpdump -r` (24 IDs e 24 portas diferentes) |
 | Nomes com maiúsculas e minúsculas (0x20) | Ok, nas perguntas e ecoados nas respostas |
 | Saída do `chance_envenenamento.py` | Ok |
+
+## Como explicar no vídeo
+
+Sugestão de fala, com o print da seção 5 na tela:
+
+> O resolvedor aceita a primeira resposta que chega com o mesmo ID, a mesma porta e o mesmo nome
+> da pergunta. Um atacante pode tentar chegar antes da resposta verdadeira, mandando respostas
+> falsas e chutando esses valores. Se ele acertar, a mentira fica no cache e vai para todo mundo:
+> isso é o **envenenamento de cache**.
+>
+> Na captura, cada pergunta sai com um ID e uma porta diferentes e sem padrão. Até quando o
+> servidor não responde e o resolvedor tenta de novo, nos quadros 8 e 9, os dois mudam. Então o
+> atacante teria que acertar uma entre 4 bilhões de combinações.
+>
+> Além disso, o Unbound mistura maiúsculas e minúsculas no nome, a técnica 0x20, e o servidor
+> devolve as letras iguais. É mais uma coisa que o atacante não tem como saber.
+>
+> O script mostra a diferença: com só o ID aleatório, 46 tentativas bastam para ter 50% de
+> chance. Com ID e porta, são quase 3 milhões. E mesmo que ele acerte tudo, o DNSSEC recusa a
+> resposta, porque ela não tem assinatura válida.
