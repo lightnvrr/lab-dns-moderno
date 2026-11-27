@@ -231,44 +231,80 @@ A zona foi assinada de novo a partir do arquivo original: o banco voltou a 10.0.
 continua a mesma (tag 30805), porque o script reaproveita as chaves que já existem. Por isso
 a âncora `lab.ds` do resolvedor não precisou mudar.
 
-## 6. Prints para o README e o vídeo (pendente, Jamily)
+## 6. Prints para o README e o vídeo
 
-Os prints de tela eu não consigo tirar. Sugestão do que capturar, com o terminal em fonte
-grande e fundo escuro (no Windows: `Win + Shift + S`):
+Prints tirados pela Jamily numa sessão própria, entre 01:37 e 01:48 UTC de 27/11/2026,
+repetindo as etapas acima.
 
-1. **Antes:** `dig @172.21.0.53 banco.lab.internal +dnssec` mostrando `ad` e o IP 10.0.0.43.
-2. **Ataque:** a saída do `quebrar_zona.sh`.
-3. **Defesa:** o `dig ... +dnssec` com `status: SERVFAIL` e `ANSWER: 0`. Destaque essas duas partes.
-4. **Prova:** o `dig ... +cd` com o 10.6.6.6. Se der, deixe os prints 3 e 4 lado a lado.
-5. **Motivo:** a linha `validation failure ... signature crypto failed` do log.
-6. **Volta ao normal:** o `dig` depois do `restaurar_zona.sh`, com `ad` e 10.0.0.43.
+### Print 1: resposta validada
 
-Roteiro para repetir na gravação (dentro de `docker compose exec cliente-a bash`):
+![dig www.lab.internal +dnssec com a flag ad e o RRSIG](prints/modulo-1-01-valida.png)
+
+*Antes do ataque: `www.lab.internal` responde 10.0.0.80 com a flag **`ad`** e o **`RRSIG`**,
+assinado pela chave 30805 da zona `lab.internal`.*
+
+### Print 2: o ataque
+
+![Saída do quebrar_zona.sh](prints/modulo-1-02-quebra.png)
+
+*O `quebrar_zona.sh` troca o IP de `banco.lab.internal` para **10.6.6.6** direto na zona
+publicada, mas mantém a assinatura antiga, porque o atacante não tem a chave privada.*
+
+### Print 3: a defesa
+
+![dig banco.lab.internal +dnssec com SERVFAIL](prints/modulo-1-03-servfail.png)
+
+*O resolvedor confere a assinatura, ela não bate com o IP novo, e a resposta vira
+**`status: SERVFAIL`** com **`ANSWER: 0`**. É melhor não responder do que entregar um endereço falso.*
+
+### Print 4: a prova
+
+![dig banco.lab.internal +cd mostrando 10.6.6.6](prints/modulo-1-04-cd.png)
+
+*Com `+cd` (sem validação), aparece o IP falso **10.6.6.6**. A flag agora é **`cd`** (Checking
+Disabled), e não `ad`, porque a resposta não foi validada. O TTL é **10**, e não 300, por causa
+do `val-bogus-ttl: 10` do `unbound.conf`: uma resposta inválida fica guardada só 10 segundos.*
+
+### Print 5: o motivo, no log do resolvedor
+
+![Log do Unbound com validation failure](prints/modulo-1-05-log.png)
+
+*O Unbound registra `validation failure <banco.lab.internal. A IN>: signature crypto failed
+from 172.20.0.10`, que é o autoritativo. As **duas últimas linhas são desta sessão**: os carimbos
+1795743795 e 1795743855 são 01:43:15 e 01:44:15 UTC, os mesmos horários dos prints 3 e 4. As
+duas primeiras são de testes anteriores: 1795740503 (00:48:23) é a quebra das seções 2 a 4 e
+1795741669 (01:07:49) é o teste por DoH da issue #6.*
+
+### Print 6: de volta ao normal
+
+![dig banco.lab.internal +dnssec depois de restaurar, com ad](prints/modulo-1-06-restaurada.png)
+
+*Depois do `restaurar_zona.sh`, o banco volta a **10.0.0.43** com **`ad`**. O RRSIG tem
+**datas novas** (20261127004724 a 20271127004724) porque a zona foi **reassinada**, mas com a
+**mesma chave 30805**. Por isso a âncora `lab.ds` do resolvedor continua valendo.*
+
+### Para repetir na gravação
+
+Dentro de `docker compose exec cliente-a bash`:
 
 ```bash
-dig @172.21.0.53 banco.lab.internal +dnssec      # print 1
+dig @172.21.0.53 www.lab.internal +dnssec        # print 1
 bash /lab/scripts/quebrar_zona.sh                # print 2
-```
-
-O print 1 deixa a resposta verdadeira no cache por 5 minutos, então, antes de seguir, rode
-no PowerShell `docker compose restart borda resolvedor` (a sessão do `exec` continua aberta,
-porque o cliente-a não é reiniciado). Depois:
-
-```bash
 sleep 7
 dig @172.21.0.53 banco.lab.internal +dnssec      # print 3
 dig @172.21.0.53 banco.lab.internal +cd          # print 4
 ```
 
-No PowerShell: `docker compose logs resolvedor | Select-String "validation failure"` (print 5). Depois:
+Se o `banco.lab.internal` tiver sido consultado nos 5 minutos anteriores, a resposta verdadeira
+ainda está no cache. Nesse caso, rode no PowerShell `docker compose restart borda resolvedor`
+antes do print 3. No PowerShell, para o print 5:
+`docker compose logs resolvedor | Select-String "validation failure"`. Depois:
 
 ```bash
 bash /lab/scripts/restaurar_zona.sh
 sleep 16
 dig @172.21.0.53 banco.lab.internal +dnssec      # print 6
 ```
-
-Salve as imagens em `docs/img/` (por exemplo `dnssec-servfail.png`) para usar no README.
 
 ## Resumo
 
@@ -279,4 +315,4 @@ Salve as imagens em `docs/img/` (por exemplo `dnssec-servfail.png`) para usar no
 | `+cd` mostrando 10.6.6.6 | Ok |
 | Log com `validation failure` | Ok |
 | `restaurar_zona.sh` e `ad` de volta | Ok |
-| Prints para o README e o vídeo | **Pendente (Jamily)**, roteiro na seção 6 |
+| Prints para o README e o vídeo | Ok, 6 prints na seção 6 |
