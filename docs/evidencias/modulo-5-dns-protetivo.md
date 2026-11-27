@@ -25,8 +25,10 @@ No laboratório, quem filtra é a **borda** (CoreDNS), com o plugin `hosts` lend
 ```
 
 No `borda/Corefile`, esse bloqueio fica no trecho `(resolver)`, que é importado pelos três
-protocolos (DNS comum na 53, DoT na 853 e DoH na 443). O `fallthrough` faz os nomes que **não**
-estão na lista seguirem para o cache e para o Unbound normalmente.
+protocolos (DNS comum na 53, DoT na 853 e DoH na 443). No CoreDNS, quem decide a ordem dos
+plugins é o próprio CoreDNS, e não a ordem das linhas no arquivo: o `cache` é consultado
+primeiro e, se a resposta não estiver guardada, a pergunta passa pelo `hosts`. O `fallthrough`
+faz os nomes que **não** estão na lista seguirem para o Unbound normalmente.
 
 ## 1. `doubleclick.net` respondendo 0.0.0.0 pela borda
 
@@ -224,7 +226,8 @@ Sugestão de fala:
 
 > O DNS protetivo usa o resolvedor como filtro. Se o nome está na lista de bloqueio, a borda
 > responde 0.0.0.0, um endereço que não leva a lugar nenhum, e o navegador nem chega a abrir o
-> site de anúncio ou de golpe. Como o bloqueio fica antes do cache e do Unbound, ele vale para
+> site de anúncio ou de golpe. Como a lista de bloqueio está no trecho de configuração comum aos
+> três protocolos, e é aplicada antes de a pergunta seguir para o Unbound, ela vale igual para
 > UDP, DoT e DoH.
 >
 > Mas tem um limite: ele só protege quem pergunta para esse resolvedor. Perguntando direto ao

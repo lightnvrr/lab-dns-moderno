@@ -18,7 +18,7 @@ As defesas que o laboratório mostra são todas formas de aumentar o que o ataca
 | ID aleatório | 1 em 65.536 (16 bits) |
 | + porta de origem aleatória | 1 em cerca de 4 bilhões (cerca de 32 bits) |
 | + 0x20 (maiúsculas e minúsculas) | mais 1 bit por letra do nome |
-| DNSSEC | não adianta acertar: a resposta falsa não tem assinatura válida (issue #2) |
+| DNSSEC (só em zonas assinadas) | não adianta acertar: a resposta falsa não tem assinatura válida (issue #2). Em zonas sem DNSSEC, valem só as linhas de cima |
 
 ## 1. Captura do resolvedor com `tcpdump`
 
@@ -178,8 +178,9 @@ O "truque de Kaminsky" é por que o número de corridas importa: o atacante pede
 (`aaa1.banco.com`, `aaa2.banco.com`...), que nunca estão no cache, e assim cada um abre uma
 corrida nova na hora, sem esperar TTL nenhum. Foi o que a nossa captura fez, com
 `teste1`...`teste20`. O script não inclui o 0x20, que deixaria a conta ainda pior para o
-atacante, e lembra que a garantia de verdade vem do DNSSEC: mesmo que ele acerte tudo, a
-resposta falsa não tem assinatura válida.
+atacante, e lembra que a garantia de verdade vem do DNSSEC: se o domínio é assinado, mesmo
+que ele acerte tudo, a resposta falsa não tem assinatura válida. Se o domínio não usa DNSSEC,
+a defesa é só a aleatoriedade.
 
 ## 5. Wireshark com as colunas `dns.id` e `udp.srcport`
 
@@ -239,5 +240,7 @@ Sugestão de fala, com o print da seção 5 na tela:
 > devolve as letras iguais. É mais uma coisa que o atacante não tem como saber.
 >
 > O script mostra a diferença: com só o ID aleatório, 46 tentativas bastam para ter 50% de
-> chance. Com ID e porta, são quase 3 milhões. E mesmo que ele acerte tudo, o DNSSEC recusa a
-> resposta, porque ela não tem assinatura válida.
+> chance. Com ID e porta, são quase 3 milhões. A aleatoriedade deixa o ataque muito caro. Mas a
+> garantia de verdade vem do DNSSEC: se o domínio é assinado, mesmo acertando tudo o atacante
+> não passa, porque a resposta falsa não tem assinatura válida. Se o domínio não usa DNSSEC,
+> fica só a aleatoriedade.
