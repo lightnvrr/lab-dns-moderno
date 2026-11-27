@@ -1,0 +1,17 @@
+alvo,protocolo,medicoes,mediana,p95
+cloudflare,doh_nova,150,106.9,219.7
+cloudflare,doh_reuso,150,27.4,120.5
+cloudflare,dot,150,100.1,143.2
+cloudflare,udp,150,65.1,66.6
+google,doh_nova,150,224.5,265.9
+google,doh_reuso,150,51.5,207.0
+google,dot,150,220.0,249.6
+google,udp,150,47.2,89.6
+local,doh_nova,150,7.0,61.2
+local,doh_reuso,150,3.9,8.6
+local,dot,150,47.1,50.2
+local,udp,150,1.4,2.5
+quad9,doh_nova,150,103.1,113.4
+quad9,doh_reuso,150,23.4,78.7
+quad9,dot,150,100.2,104.4
+quad9,udp,150,22.7,23.7
