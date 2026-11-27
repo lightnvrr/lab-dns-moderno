@@ -18,7 +18,7 @@ Um mini provedor de DNS em Docker que mostra, funcionando, os conceitos do semin
 | **DoT e DoH** | A mesma consulta por UDP, DoT e DoH. Na captura, o nome aparece em texto puro só no UDP. |
 | **DNS protetivo** | Uma lista de bloqueio que vale para os três protocolos, e o limite dela: quem pergunta a outro resolvedor escapa. |
 | **Cache** | A mesma pergunta duas vezes: a segunda vem da memória e é bem mais rápida. |
-| **GeoDNS** | O mesmo nome devolve IPs diferentes para clientes de redes diferentes. |
+| **GeoDNS** | O mesmo nome devolve IPs diferentes para clientes de redes diferentes, utilizando o plugin `view` do CoreDNS. O ECS (EDNS Client Subnet), definido na RFC 7871, permite compartilhar parte do prefixo de rede do cliente para auxiliar na escolha de respostas geograficamente próximas, como servidores de CDNs. Esse mecanismo possui implicações de privacidade, pois expõe informações sobre a rede do cliente. O laboratório não implementa ECS; utiliza o `view` com base no IP de origem. |
 | **Anycast** | Medição contra 1.1.1.1, 8.8.8.8 e 9.9.9.9 e descoberta de qual data center respondeu. |
 
 ## Arquitetura
