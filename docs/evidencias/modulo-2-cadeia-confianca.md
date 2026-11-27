@@ -260,3 +260,24 @@ A issue não pede prints, mas, se quiser mostrar este módulo no vídeo, os melh
 | Mostrar o DS em `lab.ds` e explicar o papel dele | Ok, com prova de que é o resumo da KSK 50164 |
 | Mostrar a KSK-2024 (38696) no `root.key` | Ok, no arquivo e marcada `VALID` pelo Unbound |
 | `delv @172.21.0.53 registro.br +vtrace` com `fully validated` | Ok |
+
+## Como explicar no vídeo
+
+Sugestão de fala:
+
+> No módulo anterior, o resolvedor detectou a fraude porque a assinatura não batia com a chave da
+> zona. Mas por que ele confia nessa chave? Porque a zona pai publica um **DS**, que é um resumo
+> da chave da filha, e esse DS é assinado pela chave do pai.
+>
+> Subindo de pai em pai, chegamos na **raiz**, que não tem pai. A chave dela vem instalada no
+> resolvedor: é a **âncora de confiança**, a KSK-2024, de número 38696.
+>
+> No `delv` dá para ver a corrente inteira: a raiz garante o `.br`, o `.br` garante o
+> `registro.br`, e o `registro.br` assina o endereço. Todos os elos conferem, e por isso aparece
+> *fully validated*.
+>
+> A nossa zona `lab.internal` não tem pai na internet, então colocamos o DS dela direto no
+> resolvedor, no arquivo `lab.ds`. Ele faz o papel que a raiz faz na internet.
+
+O que mostrar na tela: o `lab.ds` ao lado do resultado do `dnssec-dsfromkey` (os dois resumos
+iguais), a linha da 38696 com `VALID` no `root.key` e o fim do `delv +vtrace`.

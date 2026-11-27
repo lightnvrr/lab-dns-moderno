@@ -441,3 +441,22 @@ A zona voltou ao normal: 10.0.0.43 com `ad`, agora também pelo DoH.
 | Capturas `do53.pcap`, `dot.pcap` e `doh.pcap` | Ok (2, 15 e 22 pacotes, ficam só locais) e conferidas byte a byte |
 | Prints do Wireshark: nome visível só no UDP | Ok, 4 prints na seção 3 (Do53, DoT, DoH e Client Hello) |
 | DoH com a zona quebrada ainda dando SERVFAIL | Ok, também no DoT, com zona restaurada no fim |
+
+## Como explicar no vídeo
+
+Sugestão de fala, com os prints da seção 3 na tela:
+
+> No DNS comum, a pergunta viaja aberta. Na captura dá para ler o nome `www.lab.internal` e a
+> resposta, e qualquer um no caminho, como o Wi-Fi ou o provedor, vê os sites que você visita.
+>
+> O DoT e o DoH colocam a mesma pergunta dentro de um túnel TLS. Na captura só aparecem pacotes
+> cifrados, e procurando o nome nos bytes ele não está lá. O DoH ainda usa a porta 443, a mesma
+> dos sites, então se mistura com a navegação comum. O que vaza é só o tipo de serviço: a porta
+> e o `h2` no Client Hello.
+>
+> Mas atenção: o TLS protege o **caminho**, não a **verdade** da resposta. Quando eu quebro a
+> zona na origem, a pergunta pelo DoH passa pelo túnel seguro e mesmo assim dá SERVFAIL. Quem
+> pegou a fraude foi o DNSSEC.
+
+A ideia central para fechar: uma coisa não substitui a outra. O TLS dá privacidade, e o DNSSEC
+dá autenticidade.

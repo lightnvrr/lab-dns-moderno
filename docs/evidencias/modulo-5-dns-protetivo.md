@@ -25,8 +25,10 @@ No laboratório, quem filtra é a **borda** (CoreDNS), com o plugin `hosts` lend
 ```
 
 No `borda/Corefile`, esse bloqueio fica no trecho `(resolver)`, que é importado pelos três
-protocolos (DNS comum na 53, DoT na 853 e DoH na 443). O `fallthrough` faz os nomes que **não**
-estão na lista seguirem para o cache e para o Unbound normalmente.
+protocolos (DNS comum na 53, DoT na 853 e DoH na 443). No CoreDNS, quem decide a ordem dos
+plugins é o próprio CoreDNS, e não a ordem das linhas no arquivo: o `cache` é consultado
+primeiro e, se a resposta não estiver guardada, a pergunta passa pelo `hosts`. O `fallthrough`
+faz os nomes que **não** estão na lista seguirem para o Unbound normalmente.
 
 ## 1. `doubleclick.net` respondendo 0.0.0.0 pela borda
 
@@ -217,3 +219,24 @@ A issue não pede prints. Se quiser mostrar este módulo no vídeo, os mais clar
 | `doubleclick.net` respondendo 0.0.0.0 pela borda | Ok, também por DoT e DoH |
 | O mesmo nome passando por `@1.1.1.1` | Ok, voltou o IP verdadeiro 142.251.132.238 |
 | `use-application-dns.net` com NXDOMAIN | Ok, em A e AAAA, com o contraste do 1.1.1.1 (NOERROR) |
+
+## Como explicar no vídeo
+
+Sugestão de fala:
+
+> O DNS protetivo usa o resolvedor como filtro. Se o nome está na lista de bloqueio, a borda
+> responde 0.0.0.0, um endereço que não leva a lugar nenhum, e o navegador nem chega a abrir o
+> site de anúncio ou de golpe. Como a lista de bloqueio está no trecho de configuração comum aos
+> três protocolos, e é aplicada antes de a pergunta seguir para o Unbound, ela vale igual para
+> UDP, DoT e DoH.
+>
+> Mas tem um limite: ele só protege quem pergunta para esse resolvedor. Perguntando direto ao
+> 1.1.1.1, o mesmo nome volta com o IP verdadeiro.
+>
+> É aí que entra o domínio canário. Antes de ligar o DoH sozinho, o Firefox pergunta
+> `use-application-dns.net` à rede. A nossa borda responde que o nome não existe, e o Firefox
+> entende que a rede pede para ele não fugir do DNS dela. Na internet aberta, esse nome existe.
+> Mas é só um pedido: quem liga o DoH na mão, ou outro programa, ainda escapa.
+
+O que mostrar na tela: o `dig` pela borda (0.0.0.0) e pelo 1.1.1.1 (o IP verdadeiro), um embaixo
+do outro, e o `NXDOMAIN` do domínio canário.
