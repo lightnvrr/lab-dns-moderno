@@ -94,7 +94,14 @@ dig @172.21.0.53 banco.lab.internal +dnssec   # status: SERVFAIL
 dig @172.21.0.53 banco.lab.internal +cd       # sem validação: aparece o IP falso 10.6.6.6
 bash /lab/scripts/restaurar_zona.sh        # reassina e volta ao normal
 ```
-O motivo aparece no log do resolvedor: `docker compose logs resolvedor | grep "validation failure"`. Registro: [modulo-1-dnssec.md](docs/evidencias/modulo-1-dnssec.md).
+O motivo aparece no log do resolvedor. No computador:
+
+```bash
+docker compose logs resolvedor | Select-String "validation failure"   # PowerShell
+docker compose logs resolvedor | grep "validation failure"            # Git Bash, Linux ou macOS
+```
+
+Registro: [modulo-1-dnssec.md](docs/evidencias/modulo-1-dnssec.md).
 
 **Cadeia de confiança na internet real**
 ```bash
@@ -149,6 +156,8 @@ docker compose exec cliente-a python3 /lab/medicao/analisar.py
 ```
 
 O `medir.py` faz 2.400 consultas (4 resolvedores × UDP, DoT, DoH com conexão nova e DoH com conexão reaproveitada × 5 nomes × 30 rodadas) e um teste de cache frio x quente. Leva uns 15 minutos. O `analisar.py` gera `medicao/dados/resumo.csv` e os gráficos abaixo.
+
+**Atenção ao teste rápido.** Para conferir antes se todos os resolvedores respondem, dá para rodar só 3 rodadas com `docker compose exec -e RODADAS=3 cliente-a python3 /lab/medicao/medir.py`. O `medir.py` faz o teste de cache no começo de cada execução, e o teste rápido deixa os nomes desse teste guardados no cache. Por isso, depois do teste rápido, rode **de novo** `docker compose restart borda resolvedor` antes da medição completa. Sem isso, o cache "frio" já sai da memória e o teste compara quente com quente.
 
 ## Resultados
 
